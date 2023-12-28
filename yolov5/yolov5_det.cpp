@@ -8,6 +8,7 @@
 #include <iostream>
 #include <chrono>
 #include <cmath>
+#include <fstream>
 
 using namespace nvinfer1;
 
@@ -131,6 +132,112 @@ void deserialize_engine(std::string& engine_name, IRuntime** runtime, ICudaEngin
   delete[] serialized_engine;
 }
 
+// class dict 
+std::map<int, std::string> class_id_to_name = {
+    {0, "person"},
+    {1, "bicycle"},
+    {2, "car"},
+    {3, "motorcycle"},
+    {4, "aeroplane"},
+    {5, "bus"},
+    {6, "train"},
+    {7, "truck"},
+    {8, "boat"},
+    {9, "traffic light"},
+    {10, "fire hydrant"},
+    {11, "stop sign"},
+    {12, "parking meter"},
+    {13, "bench"},
+    {14, "bird"},
+    {15, "cat"},
+    {16, "dog"},
+    {17, "horse"},
+    {18, "sheep"},
+    {19, "cow"},
+    {20, "elephant"},
+    {21, "bear"},
+    {22, "zebra"},
+    {23, "giraffe"},
+    {24, "backpack"},
+    {25, "umbrella"},
+    {26, "handbag"},
+    {27, "tie"},
+    {28, "suitcase"},
+    {29, "frisbee"},
+    {30, "skis"},
+    {31, "snowboard"},
+    {32, "sports ball"},
+    {33, "kite"},
+    {34, "baseball bat"},
+    {35, "baseball glove"},
+    {36, "skateboard"},
+    {37, "surfboard"},
+    {38, "tennis racket"},
+    {39, "bottle"},
+    {40, "wine glass"},
+    {41, "cup"},
+    {42, "fork"},
+    {43, "knife"},
+    {44, "spoon"},
+    {45, "bowl"},
+    {46, "banana"},
+    {47, "apple"},
+    {48, "sandwich"},
+    {49, "orange"},
+    {50, "broccoli"},
+    {51, "carrot"},
+    {52, "hot dog"},
+    {53, "pizza"},
+    {54, "donut"},
+    {55, "cake"},
+    {56, "chair"},
+    {57, "couch"},
+    {58, "potted plant"},
+    {59, "bed"},
+    {60, "dining table"},
+    {61, "toilet"},
+    {62, "tv"},
+    {63, "laptop"},
+    {64, "mouse"},
+    {65, "remote"},
+    {66, "keyboard"},
+    {67, "cell phone"},
+    {68, "microwave"},
+    {69, "oven"},
+    {70, "toaster"},
+    {71, "sink"},
+    {72, "refrigerator"},
+    {73, "book"},
+    {74, "clock"},
+    {75, "vase"},
+    {76, "scissors"},
+    {77, "teddy bear"},
+    {78, "hair drier"},
+    {79, "toothbrush"}
+};
+
+// Function to get class name from class ID
+std::string get_class_name(int class_id) {
+    auto it = class_id_to_name.find(class_id);
+    return (it != class_id_to_name.end()) ? it->second : "Unknown";
+}
+
+// Function to get file name without extension
+std::string get_file_name_without_extension(const std::string& file_name) {
+    size_t last_dot = file_name.find_last_of(".");
+    if (last_dot != std::string::npos) {
+        return file_name.substr(0, last_dot);
+    }
+    return file_name;
+}
+
+void convert_to_standard_format(double x_center, double y_center, double width, double height, double& left, double& top, double& right, double& bottom) {
+    left = x_center - width / 2.0;
+    top = y_center - height / 2.0;
+    right = x_center + width / 2.0;
+    bottom = y_center + height / 2.0;
+}
+
 int main(int argc, char** argv) {
   cudaSetDevice(kGpuId);
 
@@ -194,18 +301,54 @@ int main(int argc, char** argv) {
     auto start = std::chrono::system_clock::now();
     infer(*context, stream, (void**)gpu_buffers, cpu_output_buffer, kBatchSize);
     auto end = std::chrono::system_clock::now();
-    std::cout << "inference time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "inference time: " << elapsed_time << "ms" << std::endl;
+    float fps = 1000.0 / elapsed_time;  // Calculate FPS as 1000 milliseconds divided by elapsed time in milliseconds
+    std::cout << "FPS: " << fps << std::endl;
+    
     // NMS
     std::vector<std::vector<Detection>> res_batch;
     batch_nms(res_batch, cpu_output_buffer, img_batch.size(), kOutputSize, kConfThresh, kNmsThresh);
+    
+    
 
+    // Print bounding box coordinates
+    for (size_t batch_idx = 0; batch_idx < img_batch.size(); ++batch_idx) {
+        std::string output_folder = "results/outputs/";
+        std::string output_file_name = output_folder + get_file_name_without_extension(img_name_batch[batch_idx]) + ".txt";
+        std::ofstream output_file(output_file_name);    
+        if (!output_file.is_open()) {
+            std::cerr << "Failed to open the output file." << std::endl;
+            return -1;
+        }  
+        
+        std::cout << "Batch " << batch_idx << ":\n";
+        
+        for (size_t detection_idx = 0; detection_idx < res_batch[batch_idx].size(); ++detection_idx) {
+            const Detection& detection = res_batch[batch_idx][detection_idx];
+            
+            double left, top, right, bottom;
+            convert_to_standard_format(detection.bbox[0], detection.bbox[1], detection.bbox[2], detection.bbox[3], left, top, right, bottom);
+
+            std::cout << "  Detection " << detection_idx << ":\n";
+            std::cout << "    Converted Bounding Box: (" << left << ", " << top << ", " << right << ", " << bottom << ")\n";
+            std::cout << "    Confidence: " << detection.conf << "\n";
+            std::cout << "    Class ID: " << detection.class_id << "\n";
+            std::cout << "    Class Name: " << get_class_name(detection.class_id) << "\n";
+
+            output_file << get_class_name(detection.class_id) << " " << detection.conf << " "
+                        << left << " " << top << " " << right << " " << bottom << "\n";
+        }
+        std::cout << "Results written to: " << output_file_name << std::endl;
+    }
+  
     // Draw bounding boxes
     draw_bbox(img_batch, res_batch);
 
     // Save images
+    std::string image_folder = "results/images/";
     for (size_t j = 0; j < img_batch.size(); j++) {
-      cv::imwrite("_" + img_name_batch[j], img_batch[j]);
+      cv::imwrite(image_folder + img_name_batch[j], img_batch[j]);
     }
   }
 
