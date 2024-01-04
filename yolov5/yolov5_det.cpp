@@ -134,87 +134,87 @@ void deserialize_engine(std::string& engine_name, IRuntime** runtime, ICudaEngin
 
 // class dict 
 std::map<int, std::string> class_id_to_name = {
-        {1, "Person"},
-        {2, "Bicycle"},
-        {3, "Car"},
-        {4, "Motorbike"},
-        {5, "Aeroplane"},
-        {6, "Bus"},
-        {7, "Train"},
-        {8, "Truck"},
-        {9, "Boat"},
-        {10, "Traffic Light"},
-        {11, "Fire Hydrant"},
-        {12, "Stop Sign"},
-        {13, "Parking Meter"},
-        {14, "Bench"},
-        {15, "Bird"},
-        {16, "Cat"},
-        {17, "Dog"},
-        {18, "Horse"},
-        {19, "Sheep"},
-        {20, "Cow"},
-        {21, "Elephant"},
-        {22, "Bear"},
-        {23, "Zebra"},
-        {24, "Giraffe"},
-        {25, "Backpack"},
-        {26, "Umbrella"},
-        {27, "Handbag"},
-        {28, "Tie"},
-        {29, "Suitcase"},
-        {30, "Frisbee"},
-        {31, "Skis"},
-        {32, "Snowboard"},
-        {33, "Sports Ball"},
-        {34, "Kite"},
-        {35, "Baseball Bat"},
-        {36, "Baseball Glove"},
-        {37, "Skateboard"},
-        {38, "Surfboard"},
-        {39, "Tennis Racket"},
-        {40, "Bottle"},
-        {41, "Wine Glass"},
-        {42, "Cup"},
-        {43, "Fork"},
-        {44, "Knife"},
-        {45, "Spoon"},
-        {46, "Bowl"},
-        {47, "Banana"},
-        {48, "Apple"},
-        {49, "Sandwich"},
-        {50, "Orange"},
-        {51, "Broccoli"},
-        {52, "Carrot"},
-        {53, "Hot Dog"},
-        {54, "Pizza"},
-        {55, "Donut"},
-        {56, "Cake"},
-        {57, "Chair"},
-        {58, "Sofa"},
-        {59, "Potted Plant"},
-        {60, "Bed"},
-        {61, "Dining Table"},
-        {62, "Toilet"},
-        {63, "TV/Monitor"},
-        {64, "Laptop"},
-        {65, "Mouse"},
-        {66, "Remote"},
-        {67, "Keyboard"},
-        {68, "Cell Phone"},
-        {69, "Microwave"},
-        {70, "Oven"},
-        {71, "Toaster"},
-        {72, "Sink"},
-        {73, "Refrigerator"},
-        {74, "Book"},
-        {75, "Clock"},
-        {76, "Vase"},
-        {77, "Scissors"},
-        {78, "Teddy Bear"},
-        {79, "Hair Drier"},
-        {80, "Toothbrush"}
-    };
+    {0, "Person"},
+    {1, "Bicycle"},
+    {2, "Car"},
+    {3, "Motorbike"},
+    {4, "Aeroplane"},
+    {5, "Bus"},
+    {6, "Train"},
+    {7, "Truck"},
+    {8, "Boat"},
+    {9, "Traffic_Light"},
+    {10, "Fire_Hydrant"},
+    {11, "Stop_Sign"},
+    {12, "Parking_Meter"},
+    {13, "Bench"},
+    {14, "Bird"},
+    {15, "Cat"},
+    {16, "Dog"},
+    {17, "Horse"},
+    {18, "Sheep"},
+    {19, "Cow"},
+    {20, "Elephant"},
+    {21, "Bear"},
+    {22, "Zebra"},
+    {23, "Giraffe"},
+    {24, "Backpack"},
+    {25, "Umbrella"},
+    {26, "Handbag"},
+    {27, "Tie"},
+    {28, "Suitcase"},
+    {29, "Frisbee"},
+    {30, "Skis"},
+    {31, "Snowboard"},
+    {32, "Sports_Ball"},
+    {33, "Kite"},
+    {34, "Baseball_Bat"},
+    {35, "Baseball_Glove"},
+    {36, "Skateboard"},
+    {37, "Surfboard"},
+    {38, "Tennis_Racket"},
+    {39, "Bottle"},
+    {40, "Wine_Glass"},
+    {41, "Cup"},
+    {42, "Fork"},
+    {43, "Knife"},
+    {44, "Spoon"},
+    {45, "Bowl"},
+    {46, "Banana"},
+    {47, "Apple"},
+    {48, "Sandwich"},
+    {49, "Orange"},
+    {50, "Broccoli"},
+    {51, "Carrot"},
+    {52, "Hot_Dog"},
+    {53, "Pizza"},
+    {54, "Donut"},
+    {55, "Cake"},
+    {56, "Chair"},
+    {57, "Sofa"},
+    {58, "Potted_Plant"},
+    {59, "Bed"},
+    {60, "Dining_Table"},
+    {61, "Toilet"},
+    {62, "TV/Monitor"},
+    {63, "Laptop"},
+    {64, "Mouse"},
+    {65, "Remote"},
+    {66, "Keyboard"},
+    {67, "Cell_Phone"},
+    {68, "Microwave"},
+    {69, "Oven"},
+    {70, "Toaster"},
+    {71, "Sink"},
+    {72, "Refrigerator"},
+    {73, "Book"},
+    {74, "Clock"},
+    {75, "Vase"},
+    {76, "Scissors"},
+    {77, "Teddy_Bear"},
+    {78, "Hair_Drier"},
+    {79, "Toothbrush"}
+};
 
 // Function to get class name from class ID
 std::string get_class_name(int class_id) {
@@ -231,11 +231,15 @@ std::string get_file_name_without_extension(const std::string& file_name) {
     return file_name;
 }
 
-void convert_to_standard_format(double x_center, double y_center, double width, double height, double& left, double& top, double& right, double& bottom) {
+void convert_to_standard_format(double x_center, double y_center, double width, double height, double& left, double& top, double& right, double& bottom, int w_image, int h_image) {
     left = x_center - width / 2.0;
     top = y_center - height / 2.0;
     right = x_center + width / 2.0;
     bottom = y_center + height / 2.0;
+    left = left * w_image / 640;
+    top = top * h_image / 640;
+    right = right * w_image / 640;
+    bottom = bottom * h_image /640;
 }
 
 int main(int argc, char** argv) {
@@ -314,7 +318,7 @@ int main(int argc, char** argv) {
 
     // Print bounding box coordinates
     for (size_t batch_idx = 0; batch_idx < img_batch.size(); ++batch_idx) {
-        std::string output_folder = "results/outputs/";
+        std::string output_folder = "/home/quandang246/project/SCS_SMART_CART_SYSTEM/Final_results/coordinates/"; // Path to your detection-results in mAP
         std::string output_file_name = output_folder + get_file_name_without_extension(img_name_batch[batch_idx]) + ".txt";
         std::ofstream output_file(output_file_name);    
         if (!output_file.is_open()) {
@@ -328,7 +332,12 @@ int main(int argc, char** argv) {
             const Detection& detection = res_batch[batch_idx][detection_idx];
             
             double left, top, right, bottom;
-            convert_to_standard_format(detection.bbox[0], detection.bbox[1], detection.bbox[2], detection.bbox[3], left, top, right, bottom);
+            int w_image, h_image;
+            w_image = img_batch[batch_idx].cols; 
+            h_image = img_batch[batch_idx].rows;
+            std::cout << "YOLO_format " << detection.bbox[0] << " " << detection.bbox[1] << " " << detection.bbox[2] << " " << detection.bbox[3] << "\n";
+            convert_to_standard_format(detection.bbox[0], detection.bbox[1], detection.bbox[2], detection.bbox[3], left, top, right, bottom, w_image, h_image);
+            cv::rectangle(img_batch[batch_idx], cv::Point(int(left), int(top)), cv::Point(int(right), int(bottom)), cv::Scalar(0x27, 0xC1, 0x36), 2);
 
             std::cout << "  Detection " << detection_idx << ":\n";
             std::cout << "    Converted Bounding Box: (" << left << ", " << top << ", " << right << ", " << bottom << ")\n";
@@ -338,15 +347,17 @@ int main(int argc, char** argv) {
 
             output_file << get_class_name(detection.class_id) << " " << detection.conf << " "
                         << left << " " << top << " " << right << " " << bottom << "\n";
-        }
-        std::cout << "Results written to: " << output_file_name << std::endl;
+      }
+      cv::imshow("show", img_batch[batch_idx]);
+      cv::waitKey(0);
+      std::cout << "Results written to: " << output_file_name << std::endl;
     }
   
     // Draw bounding boxes
     draw_bbox(img_batch, res_batch);
 
     // Save images
-    std::string image_folder = "results/images/";
+    std::string image_folder = "/home/quandang246/project/SCS_SMART_CART_SYSTEM/Final_results/images/";
     for (size_t j = 0; j < img_batch.size(); j++) {
       cv::imwrite(image_folder + img_name_batch[j], img_batch[j]);
     }

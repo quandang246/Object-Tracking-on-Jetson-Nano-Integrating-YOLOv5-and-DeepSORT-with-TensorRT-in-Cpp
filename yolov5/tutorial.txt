@@ -6,7 +6,9 @@ https://github.com/wang-xinyu/tensorrtx/tree/master/yolov5
     yolov5s.engine: Desired name for the TensorRT plan file.
     s: Indicates the YOLOv5 model size (choose one of n/s/m/l/x/n6/s6/m6/l6/x6).
 
-./yolov5_det -d yolov5s.engine /home/quandang246/project/tensorrtx/yolov5/images
+./yolov5_det -d yolov5s.engine /path/to/image_folder
+    example: 
+    ./yolov5_det -d yolov5s.engine /home/quandang246/project/SCS_SMART_CART_SYSTEM/data/VOCtrainval_11-May-2012/VOCdevkit/VOC2012/JPEGImages
     -d: Indicates that you want to deserialize the model and run inference.
     yolov5s.engine: Path to the serialized TensorRT plan file (replace with the actual path to your .engine file).
     /path/to/image_folder: Path to the folder containing the images you want to process.
