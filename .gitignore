@@ -4,3 +4,10 @@
 */*.ppm
 *idea*
 output/
+.vscode/
+Final_results/
+data/VOCtrainval_11-May-2012/
+data/input_mAP_original/
+data/test_data/
+mAP/input/
+mAP/output/
