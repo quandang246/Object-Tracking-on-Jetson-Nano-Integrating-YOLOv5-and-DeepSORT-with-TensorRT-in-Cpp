@@ -27,19 +27,15 @@ This project combines YOLOv5, , with DeepSORT, an advanced object tracking algor
 
 ## Prerequisites
 - NVIDIA Jetson Nano Developer Kit with JetPack 4.5 (or later)
+- TensorRT: 8.x
 - CUDA Toolkit 10.2
+- cuDNN 8.2
+- Python 3
 - C++17 Compiler
-- Pre-trained YOLOv5 and DeepSORT models
+- 4GB swap memory
+- Tested on Ubuntu 18.04
+- OpenCV: 8.8.0-dev with CUDA
 - USB camera or Raspberry Pi Camera Module v2
-
-## Installation
-### Jetson Nano Setup
-1. Flash JetPack 4.5 using NVIDIA SDK Manager.
-2. Update and upgrade the system packages.
-
-### Dependencies
-1. Install CUDA Toolkit 10.2 and cuDNN.
-2. Install additional dependencies: `sudo apt-get install libopencv-dev`
 
 ## Usage
 ### Usage-YOLOv5
