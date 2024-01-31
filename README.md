@@ -170,9 +170,9 @@ Optional (if you want to see the **animation**):
 
 <img src="https://user-images.githubusercontent.com/15831541/43008995-64dd53ce-8c34-11e8-8a2c-4567b1311910.png" width="45%" height="45%" />
 
-<img src="https://user-images.githubusercontent.com/15831541/38933241-5f9556ae-4310-11e8-9d47-cb205f9b103b.png"/>
+<img src="[https://user-images.githubusercontent.com/15831541/38933241-5f9556ae-4310-11e8-9d47-cb205f9b103b.png](mAP/output/classes)"/>
 
-<img src="https://user-images.githubusercontent.com/15831541/38933180-366b6fca-4310-11e8-99b9-17ad4b159b86.png" />
+<img src="https://github.com/quandang246/Object-Tracking-on-Jetson-Nano-Integrating-YOLOv5-and-DeepSORT-with-TensorRT-in-Cpp/blob/main/results/detection-results-info.png" />
 
 ## Benchmarking
 - Achieved 10~13 FPS on Jetson Nano (detection-only )
