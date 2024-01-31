@@ -7,10 +7,10 @@ Bus
 Train
 Truck
 Boat
-Traffic Light
-Fire Hydrant
-Stop Sign
-Parking Meter
+Traffic_Light
+Fire_Hydrant
+Stop_Sign
+Parking_Meter
 Bench
 Bird
 Cat
@@ -30,15 +30,15 @@ Suitcase
 Frisbee
 Skis
 Snowboard
-Sports Ball
+Sports_Ball
 Kite
-Baseball Bat
-Baseball Glove
+Baseball_Bat
+Baseball_Glove
 Skateboard
 Surfboard
-Tennis Racket
+Tennis_Racket
 Bottle
-Wine Glass
+Wine_Glass
 Cup
 Fork
 Knife
@@ -50,22 +50,22 @@ Sandwich
 Orange
 Broccoli
 Carrot
-Hot Dog
+Hot_Dog
 Pizza
 Donut
 Cake
 Chair
 Sofa
-Potted Plant
+Potted_Plant
 Bed
-Dining Table
+Dining_Table
 Toilet
 TV/Monitor
 Laptop
 Mouse
 Remote
 Keyboard
-Cell Phone
+Cell_Phone
 Microwave
 Oven
 Toaster
@@ -75,6 +75,6 @@ Book
 Clock
 Vase
 Scissors
-Teddy Bear
-Hair Drier
+Teddy_Bear
+Hair_Drier
 Toothbrush

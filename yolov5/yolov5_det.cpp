@@ -8,11 +8,16 @@
 #include <iostream>
 #include <chrono>
 #include <cmath>
+#include <fstream>
 
 using namespace nvinfer1;
 
 static Logger gLogger;
 const static int kOutputSize = kMaxNumOutputBbox * sizeof(Detection) / sizeof(float) + 1;
+
+struct AffineMatrix {
+  float value[6];
+};
 
 bool parse_args(int argc, char** argv, std::string& wts, std::string& engine, bool& is_p6, float& gd, float& gw, std::string& img_dir) {
   if (argc < 4) return false;
@@ -131,6 +136,154 @@ void deserialize_engine(std::string& engine_name, IRuntime** runtime, ICudaEngin
   delete[] serialized_engine;
 }
 
+// class dict 
+std::map<int, std::string> class_id_to_name = {
+    {0, "person"},
+    {1, "bicycle"},
+    {2, "car"},
+    {3, "motorbike"},
+    {4, "aeroplane"},
+    {5, "bus"},
+    {6, "train"},
+    {7, "truck"},
+    {8, "boat"},
+    {9, "traffic_Light"},
+    {10, "fire_Hydrant"},
+    {11, "stop_Sign"},
+    {12, "parking_Meter"},
+    {13, "bench"},
+    {14, "bird"},
+    {15, "cat"},
+    {16, "dog"},
+    {17, "horse"},
+    {18, "sheep"},
+    {19, "cow"},
+    {20, "elephant"},
+    {21, "bear"},
+    {22, "zebra"},
+    {23, "giraffe"},
+    {24, "backpack"},
+    {25, "umbrella"},
+    {26, "handbag"},
+    {27, "tie"},
+    {28, "suitcase"},
+    {29, "frisbee"},
+    {30, "skis"},
+    {31, "snowboard"},
+    {32, "sports_Ball"},
+    {33, "kite"},
+    {34, "baseball_Bat"},
+    {35, "baseball_Glove"},
+    {36, "skateboard"},
+    {37, "surfboard"},
+    {38, "tennis_Racket"},
+    {39, "bottle"},
+    {40, "wine_Glass"},
+    {41, "cup"},
+    {42, "fork"},
+    {43, "knife"},
+    {44, "spoon"},
+    {45, "bowl"},
+    {46, "banana"},
+    {47, "apple"},
+    {48, "sandwich"},
+    {49, "orange"},
+    {50, "broccoli"},
+    {51, "carrot"},
+    {52, "hot_Dog"},
+    {53, "pizza"},
+    {54, "donut"},
+    {55, "cake"},
+    {56, "chair"},
+    {57, "sofa"},
+    {58, "pottedplant"},
+    {59, "bed"},
+    {60, "diningtable"},
+    {61, "toilet"},
+    {62, "tvmonitor"},
+    {63, "laptop"},
+    {64, "mouse"},
+    {65, "remote"},
+    {66, "keyboard"},
+    {67, "cell_Phone"},
+    {68, "microwave"},
+    {69, "oven"},
+    {70, "toaster"},
+    {71, "sink"},
+    {72, "refrigerator"},
+    {73, "book"},
+    {74, "clock"},
+    {75, "vase"},
+    {76, "scissors"},
+    {77, "teddy_Bear"},
+    {78, "hair_Drier"},
+    {79, "toothbrush"}
+};
+
+// Function to get class name from class ID
+std::string get_class_name(int class_id) {
+    auto it = class_id_to_name.find(class_id);
+    return (it != class_id_to_name.end()) ? it->second : "Unknown";
+}
+
+// Function to get file name without extension
+std::string get_file_name_without_extension(const std::string& file_name) {
+    size_t last_dot = file_name.find_last_of(".");
+    if (last_dot != std::string::npos) {
+        return file_name.substr(0, last_dot);
+    }
+    return file_name;
+}
+
+std::vector<AffineMatrix> calculate_d2s(std::vector<cv::Mat>& img_batch, int dst_width, int dst_height) {
+    std::vector<AffineMatrix> d2s_matrices;
+
+    for (size_t i = 0; i < img_batch.size(); i++) {
+        int src_width = img_batch[i].cols;
+        int src_height = img_batch[i].rows;
+
+        AffineMatrix s2d, d2s;
+        float scale = std::min(static_cast<float>(dst_height) / src_height, static_cast<float>(dst_width) / src_width);
+
+        s2d.value[0] = scale;
+        s2d.value[1] = 0;
+        s2d.value[2] = -scale * src_width * 0.5 + dst_width * 0.5;
+        s2d.value[3] = 0;
+        s2d.value[4] = scale;
+        s2d.value[5] = -scale * src_height * 0.5 + dst_height * 0.5;
+
+        cv::Mat m2x3_s2d(2, 3, CV_32F, s2d.value);
+        cv::Mat m2x3_d2s(2, 3, CV_32F, d2s.value);
+        cv::invertAffineTransform(m2x3_s2d, m2x3_d2s);
+
+        memcpy(d2s.value, m2x3_d2s.ptr<float>(0), sizeof(d2s.value));
+
+        d2s_matrices.push_back(d2s);
+    }
+
+    return d2s_matrices;
+}
+
+
+void convert_to_standard_format_with_d2s(double x_center, double y_center, double width, double height, double& left, double& top, double& right, double& bottom, int w_image, int h_image, const AffineMatrix& d2s) {
+    // Convert to corners in the scaled image space
+    left = x_center - width / 2.0;
+    top = y_center - height / 2.0;
+    right = x_center + width / 2.0;
+    bottom = y_center + height / 2.0;
+
+    // Apply the d2s transformation
+    double l = d2s.value[0] * left + d2s.value[1] * top + d2s.value[2];
+    double t = d2s.value[3] * left + d2s.value[4] * top + d2s.value[5];
+    double r = d2s.value[0] * right + d2s.value[1] * bottom + d2s.value[2];
+    double b = d2s.value[3] * right + d2s.value[4] * bottom + d2s.value[5];
+
+    left = l;
+    top = t;
+    right = r;
+    bottom = b;
+}
+
 int main(int argc, char** argv) {
   cudaSetDevice(kGpuId);
 
@@ -190,22 +343,71 @@ int main(int argc, char** argv) {
     // Preprocess
     cuda_batch_preprocess(img_batch, gpu_buffers[0], kInputW, kInputH, stream);
 
+    // Calculate d2s matrices for each image in the batch
+    std::vector<AffineMatrix> d2s_matrices = calculate_d2s(img_batch, kInputW, kInputH);
+
+
     // Run inference
     auto start = std::chrono::system_clock::now();
     infer(*context, stream, (void**)gpu_buffers, cpu_output_buffer, kBatchSize);
     auto end = std::chrono::system_clock::now();
-    std::cout << "inference time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "inference time: " << elapsed_time << "ms" << std::endl;
+    float fps = 1000.0 / elapsed_time;  // Calculate FPS as 1000 milliseconds divided by elapsed time in milliseconds
+    std::cout << "FPS: " << fps << std::endl;
+    
     // NMS
     std::vector<std::vector<Detection>> res_batch;
     batch_nms(res_batch, cpu_output_buffer, img_batch.size(), kOutputSize, kConfThresh, kNmsThresh);
+    
+    
 
+    // Print bounding box coordinates
+    for (size_t batch_idx = 0; batch_idx < img_batch.size(); ++batch_idx) {
+        std::string output_folder = "/home/quandang246/project/SCS_SMART_CART_SYSTEM/Final_results/detection-results/"; // Path to your detection-results in mAP
+        std::string output_file_name = output_folder + get_file_name_without_extension(img_name_batch[batch_idx]) + ".txt";
+        std::ofstream output_file(output_file_name);    
+        if (!output_file.is_open()) {
+            std::cerr << "Failed to open the output file." << std::endl;
+            return -1;
+        }  
+        
+        std::cout << "Batch " << batch_idx << ":\n";
+        
+        for (size_t detection_idx = 0; detection_idx < res_batch[batch_idx].size(); ++detection_idx) {
+            const Detection& detection = res_batch[batch_idx][detection_idx];
+            
+            double left, top, right, bottom;
+            int w_image, h_image;
+            w_image = img_batch[batch_idx].cols; 
+            h_image = img_batch[batch_idx].rows;
+            std::cout << "YOLO_format " << detection.bbox[0] << " " << detection.bbox[1] << " " << detection.bbox[2] << " " << detection.bbox[3] << "\n";
+            
+            convert_to_standard_format_with_d2s(detection.bbox[0], detection.bbox[1], detection.bbox[2], detection.bbox[3], left, top, right, bottom, w_image, h_image, d2s_matrices[batch_idx]);
+            
+            cv::rectangle(img_batch[batch_idx], cv::Point(int(left), int(top)), cv::Point(int(right), int(bottom)), cv::Scalar(0x27, 0xC1, 0x36), 2);
+
+            std::cout << "  Detection " << detection_idx << ":\n";
+            std::cout << "    Converted Bounding Box: (" << left << ", " << top << ", " << right << ", " << bottom << ")\n";
+            std::cout << "    Confidence: " << detection.conf << "\n";
+            std::cout << "    Class ID: " << detection.class_id << "\n";
+            std::cout << "    Class Name: " << get_class_name(detection.class_id) << "\n";
+
+            output_file << get_class_name(detection.class_id) << " " << detection.conf << " "
+                        << int(left) << " " << int(top) << " " << int(right) << " " << int(bottom) << "\n";
+      }
+      //cv::imshow("show", img_batch[batch_idx]);
+      //cv::waitKey(0); 
+      std::cout << "Results written to: " << output_file_name << std::endl;
+    }
+  
     // Draw bounding boxes
     draw_bbox(img_batch, res_batch);
 
     // Save images
+    std::string image_folder = "/home/quandang246/project/SCS_SMART_CART_SYSTEM/Final_results/images/";
     for (size_t j = 0; j < img_batch.size(); j++) {
-      cv::imwrite("_" + img_name_batch[j], img_batch[j]);
+      cv::imwrite(image_folder + img_name_batch[j], img_batch[j]);
     }
   }
 
